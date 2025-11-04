@@ -92,7 +92,7 @@ func TestDrainConcurrent(t *testing.T) {
 
 func TestDrainMatch(t *testing.T) {
 	config := DefaultConfig()
-	config.SimTh = 0.4 // Lower threshold for testing
+	config.SimTh = 0.4    // Lower threshold for testing
 	config.ShardCount = 1 // Use single shard for predictable behavior
 
 	drain, err := New(config)
@@ -166,27 +166,6 @@ func TestClusterSimilarity(t *testing.T) {
 	}
 }
 
-func TestTokenizer(t *testing.T) {
-	tokenizer := NewTokenizer([]string{":", "=", ","})
-
-	tests := []struct {
-		input       string
-		minExpected int
-	}{
-		{"Simple log message", 3},
-		{"Key:Value,Another:Value", 4},
-		{"Complex=Message:With,Many:Delimiters", 5}, // Adjusted expectation
-	}
-
-	for _, tt := range tests {
-		tokens := tokenizer.Tokenize(tt.input)
-		if len(tokens) < tt.minExpected {
-			t.Errorf("For input %q, expected at least %d tokens, got %d: %v",
-				tt.input, tt.minExpected, len(tokens), tokens)
-		}
-	}
-}
-
 func TestSharding(t *testing.T) {
 	config := DefaultConfig()
 	config.ShardCount = 4
@@ -208,7 +187,7 @@ func TestSharding(t *testing.T) {
 	shardCounts := make(map[*Shard]int)
 
 	for _, log := range logs {
-		tokens := drain.tokenizer.Tokenize(log)
+		tokens := Tokenize(log)
 		shard := drain.getShard(tokens)
 		shardCounts[shard]++
 	}
@@ -284,8 +263,8 @@ func generateTestLogs(count int) []string {
 
 func TestEvictionBehavior(t *testing.T) {
 	config := DefaultConfig()
-	config.MaxClusters = 20  // Small limit to trigger eviction
-	config.ShardCount = 2    // Use 2 shards, so 10 clusters per shard
+	config.MaxClusters = 20 // Small limit to trigger eviction
+	config.ShardCount = 2   // Use 2 shards, so 10 clusters per shard
 
 	drain, err := New(config)
 	if err != nil {
@@ -495,9 +474,9 @@ func TestGlobalEvictionAcrossShards(t *testing.T) {
 
 func TestMaxChildrenEnforcement(t *testing.T) {
 	config := DefaultConfig()
-	config.MaxChildren = 5   // Very low limit to trigger enforcement
-	config.ShardCount = 1    // Single shard for predictable behavior
-	config.Depth = 4         // Allow deeper tree for testing
+	config.MaxChildren = 5 // Very low limit to trigger enforcement
+	config.ShardCount = 1  // Single shard for predictable behavior
+	config.Depth = 4       // Allow deeper tree for testing
 
 	drain, err := New(config)
 	if err != nil {

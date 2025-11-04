@@ -9,14 +9,13 @@ import (
 
 // Drain represents the main Drain3 instance with concurrent support
 type Drain struct {
-	config            *Config
-	tokenizer         *Tokenizer
-	shards            []*Shard
-	shardMask         uint32
-	logCounter        int64
+	config             *Config
+	shards             []*Shard
+	shardMask          uint32
+	logCounter         int64
 	globalClusterCount int64      // atomic: total clusters across all shards
-	evictionMu        sync.Mutex  // mutex for coordinating global eviction
-	closed            int32
+	evictionMu         sync.Mutex // mutex for coordinating global eviction
+	closed             int32
 }
 
 // New creates a new Drain instance
@@ -30,13 +29,12 @@ func New(config *Config) (*Drain, error) {
 	}
 
 	d := &Drain{
-		config:            config,
-		tokenizer:         NewTokenizer(config.ExtraDelimiters),
-		shards:            make([]*Shard, config.ShardCount),
-		shardMask:         uint32(config.ShardCount - 1),
-		logCounter:        0,
+		config:             config,
+		shards:             make([]*Shard, config.ShardCount),
+		shardMask:          uint32(config.ShardCount - 1),
+		logCounter:         0,
 		globalClusterCount: 0,
-		closed:            0,
+		closed:             0,
 	}
 
 	// Initialize shards
@@ -63,7 +61,7 @@ func (d *Drain) ProcessLog(content string) (*LogCluster, error) {
 	}
 
 	logID := atomic.AddInt64(&d.logCounter, 1)
-	tokens := d.tokenizer.Tokenize(content)
+	tokens := Tokenize(content)
 
 	if len(tokens) == 0 {
 		return nil, ErrProcessingFailed
@@ -82,7 +80,7 @@ func (d *Drain) Match(content string) (*LogCluster, error) {
 		return nil, ErrDrainClosed
 	}
 
-	tokens := d.tokenizer.Tokenize(content)
+	tokens := Tokenize(content)
 	if len(tokens) == 0 {
 		return nil, ErrProcessingFailed
 	}
@@ -227,7 +225,7 @@ func (d *Drain) evictGlobally() (*Shard, *LogCluster) {
 
 			// Phase 1: Prioritize stale + small clusters
 			if size < sizeThreshold && ageMs > staleThresholdMs {
-				score = float64(ageMs) / 1000000.0 // Normalize age
+				score = float64(ageMs) / 1000000.0          // Normalize age
 				score += float64(sizeThreshold-size) * 10.0 // Prefer smaller
 			} else if size < sizeThreshold {
 				// Phase 2: Small clusters (even if not stale)
